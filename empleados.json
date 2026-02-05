@@ -1,0 +1,15 @@
+[
+  {
+    "id": 1770222091944,
+    "personales": {
+      "nombre": "EDWIN VILLAMIL LAVERDE",
+      "fechaNacimiento": "1977-10-11"
+    },
+    "laborales": {
+      "puesto": "Consultor Funcional HCM ",
+      "departamento": "DBP",
+      "salario": 2500000,
+      "fechaIngreso": "2019-03-19"
+    }
+  }
+]
