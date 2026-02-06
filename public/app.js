@@ -1,47 +1,60 @@
 const form = document.getElementById("formEmpleado");
 const lista = document.getElementById("listaEmpleados");
+const formNomina = document.getElementById("formNomina");
+const empleadoNomina = document.getElementById("empleadoNomina");
+const resultadoNomina = document.getElementById("resultadoNomina");
+const btnPdfNomina = document.getElementById("btnPdfNomina");
+const historialDiv = document.getElementById("historial");
 
-/* ======================
-   CACHE GLOBAL
-====================== */
-let empleadosCache = [];
-let editandoId = null;
+let empleadosCache = [];      // ✅ YA EXISTÍA, ahora se usa correctamente
+let editandoId = null;        // ✅ FALTABA → error editandoId not defined
 
-/* ======================
-   UTILIDADES
-====================== */
-const diasEntreFechas = (inicio, fin = new Date()) => {
-    return Math.floor((new Date(fin) - new Date(inicio)) / 86400000);
+const calcularAnios = fecha => {
+    if (!fecha) return 0;     // ✅ Previene undefined
+    const inicio = new Date(fecha);
+    const hoy = new Date();
+    return Math.floor((hoy - inicio) / (1000 * 60 * 60 * 24 * 365));
 };
 
-const calcularEdad = fecha => {
-    return Math.floor(diasEntreFechas(fecha) / 365);
+const cargarEmpleados = async () => {
+    const res = await fetch("/api/empleados");
+    const empleados = await res.json();
+
+    empleadosCache = empleados;   // ✅ CLAVE: cache global para editar
+
+    lista.innerHTML = "";
+    empleadoNomina.innerHTML = "";
+
+    empleados.forEach(e => {
+        if (!e || !e.laborales || !e.personales) return;
+
+        const anios = calcularAnios(e.laborales.fechaIngreso);
+
+        empleadoNomina.innerHTML += `
+            <option value="${e.id}">
+                ${e.personales.nombre}
+            </option>
+        `;
+
+        lista.innerHTML += `
+            <div class="card">
+                <b>${e.personales.nombre}</b><br>
+                Departamento: ${e.laborales.departamento}<br>
+                Salario: $${e.laborales.salario.toLocaleString()}<br>
+                Años de servicio: ${anios}<br><br>
+
+                <button onclick="editarEmpleado(${e.id})">✏️ Editar</button>
+                <button onclick="eliminarEmpleado(${e.id})">🗑️ Eliminar</button>
+                <button onclick="verHistorial(${e.id})">📜 Historial</button>
+            </div>
+        `;
+    });
 };
 
-const prestacionesAnuales = (salario, fechaIngreso) => {
-    const dias = Math.min(diasEntreFechas(fechaIngreso), 360);
-
-    return {
-        dias,
-        vacaciones: salario * (15 / 360) * (dias / 30),
-        prima: salario * (30 / 360) * (dias / 30),
-        cesantias: salario * (30 / 360) * (dias / 30)
-    };
-};
-
-/* ======================
-   GUARDAR / EDITAR
-====================== */
 form.addEventListener("submit", async e => {
     e.preventDefault();
 
-    // Validación básica
-    if (!nombre.value || !puesto.value || !salario.value) {
-        alert("Formulario incompleto");
-        return;
-    }
-
-    const empleado = {
+    const body = {
         personales: {
             nombre: nombre.value,
             fechaNacimiento: fechaNacimiento.value
@@ -49,7 +62,7 @@ form.addEventListener("submit", async e => {
         laborales: {
             puesto: puesto.value,
             departamento: departamento.value,
-            salario: parseFloat(salario.value),
+            salario: Number(salario.value),
             fechaIngreso: fechaIngreso.value
         }
     };
@@ -60,90 +73,71 @@ form.addEventListener("submit", async e => {
 
     const method = editandoId ? "PUT" : "POST";
 
-    try {
-        await fetch(url, {
-            method,
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(empleado)
-        });
+    await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+    });
 
-        editandoId = null;
-        form.reset();
-        cargarEmpleados();
-    } catch (err) {
-        console.error(err);
-        alert("Error guardando empleado");
-    }
+    editandoId = null;
+    form.reset();
+    cargarEmpleados();
 });
 
-/* ======================
-   CARGAR EMPLEADOS
-====================== */
-const cargarEmpleados = async () => {
-    const res = await fetch("/api/empleados");
-    empleadosCache = await res.json();
+formNomina.addEventListener("submit", async e => {
+    e.preventDefault();
 
-    lista.innerHTML = "";
+    const body = {
+        empleadoId: Number(empleadoNomina.value),
+        periodo: periodo.value,
+        novedades: {
+            horasExtras: Number(horasExtras.value || 0),
+            bonos: Number(bonos.value || 0),
+            deducciones: {
+                fondoEmpleados: Number(fondo.value || 0)
+            }
+        }
+    };
 
-    empleadosCache.forEach(e => {
-        const edad = calcularEdad(e.personales.fechaNacimiento);
-        const antiguedad = Math.floor(
-            diasEntreFechas(e.laborales.fechaIngreso) / 365
-        );
-
-        const pres = prestacionesAnuales(
-            e.laborales.salario,
-            e.laborales.fechaIngreso
-        );
-
-        lista.innerHTML += `
-        <div class="card">
-            <b>${e.personales.nombre}</b><br>
-            Edad: ${edad} años<br>
-            Puesto: ${e.laborales.puesto}<br>
-            Departamento: ${e.laborales.departamento}<br>
-            Antigüedad: ${antiguedad} años<br>
-
-            <table class="tabla">
-                <tr><th>Prestación</th><th>Valor</th></tr>
-                <tr><td>Vacaciones</td><td>$${pres.vacaciones.toLocaleString()}</td></tr>
-                <tr><td>Prima</td><td>$${pres.prima.toLocaleString()}</td></tr>
-                <tr><td>Cesantías</td><td>$${pres.cesantias.toLocaleString()}</td></tr>
-            </table>
-
-            <p>Días trabajados año: ${pres.dias}</p>
-
-            <button onclick="eliminarEmpleado(${e.id})">🗑️ Eliminar</button>
-            <button onclick="editarEmpleado(${e.id})">✏️ Editar</button>
-            <button onclick="verHistorial(${e.id})">📜 Historial</button>
-            <a href="/api/empleados/${e.id}/pdf" target="_blank">🖨️ PDF</a>
-
-            <div id="historial-${e.id}" class="historial"></div>
-        </div>`;
+    const res = await fetch("/api/nomina/calcular", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
     });
-};
 
-cargarEmpleados();
+    const n = await res.json();
+    if (n.error) return alert(n.error);
 
-/* ======================
-   ELIMINAR
-====================== */
-const eliminarEmpleado = async (id) => {
-    if (!confirm("¿Eliminar este empleado?")) return;
+    resultadoNomina.innerHTML = `
+        Neto a pagar: <b>$${n.totales.netoPagar.toLocaleString()}</b>
+    `;
 
-    await fetch(`/api/empleados/${id}`, { method: "DELETE" });
-    cargarEmpleados();
-};
+    btnPdfNomina.style.display = "inline";
+    btnPdfNomina.onclick = () =>
+        window.open(`/api/nomina/${body.empleadoId}/${body.periodo}/pdf`);
+});
 
-/* ======================
-   EDITAR
-====================== */
-const editarEmpleado = (id) => {
-    const e = empleadosCache.find(emp => emp.id === id);
-    if (!e) {
-        alert("Empleado no encontrado");
+const verHistorial = async empleadoId => {
+    const res = await fetch(`/api/empleados/${empleadoId}/historial`);
+    const historial = await res.json();
+
+    if (!historial.length) {
+        historialDiv.innerHTML = "<i>Sin cambios registrados</i>";
         return;
     }
+
+    historialDiv.innerHTML = historial.map(h => `
+        <div class="card">
+            <b>Fecha:</b> ${new Date(h.fecha).toLocaleString()}<br>
+            <b>Antes:</b> ${JSON.stringify(h.antes)}<br>
+            <b>Después:</b> ${JSON.stringify(h.despues)}
+        </div>
+    `).join("");
+};
+
+const editarEmpleado = id => {
+    const e = empleadosCache.find(emp => emp.id === id);
+    if (!e) return;
 
     nombre.value = e.personales.nombre;
     fechaNacimiento.value = e.personales.fechaNacimiento;
@@ -155,52 +149,11 @@ const editarEmpleado = (id) => {
     editandoId = id;
 };
 
-/* ======================
-   HISTORIAL
-====================== */
-const verHistorial = async (id) => {
-    const contenedor = document.getElementById(`historial-${id}`);
+const eliminarEmpleado = async id => {
+    if (!confirm("¿Eliminar empleado?")) return;
 
-    // Toggle
-    if (contenedor.innerHTML.trim() !== "") {
-        contenedor.innerHTML = "";
-        return;
-    }
-
-    const res = await fetch(`/api/empleados/${id}/historial`);
-    const historial = await res.json();
-
-    if (historial.length === 0) {
-        contenedor.innerHTML = "<p>Sin cambios registrados.</p>";
-        return;
-    }
-
-    let html = `
-        <h4>Historial de cambios</h4>
-        <table class="tabla">
-            <tr>
-                <th>Fecha</th>
-                <th>Antes</th>
-                <th>Después</th>
-            </tr>
-    `;
-
-    historial.forEach(h => {
-        html += `
-            <tr>
-                <td>${new Date(h.fecha).toLocaleString()}</td>
-                <td>
-                    ${h.antes.laborales.puesto}<br>
-                    $${h.antes.laborales.salario.toLocaleString()}
-                </td>
-                <td>
-                    ${h.despues.laborales.puesto}<br>
-                    $${h.despues.laborales.salario.toLocaleString()}
-                </td>
-            </tr>
-        `;
-    });
-
-    html += "</table>";
-    contenedor.innerHTML = html;
+    await fetch(`/api/empleados/${id}`, { method: "DELETE" });
+    cargarEmpleados();
 };
+
+cargarEmpleados();

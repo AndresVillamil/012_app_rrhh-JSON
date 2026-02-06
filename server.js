@@ -2,148 +2,186 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 const PDFDocument = require("pdfkit");
-const { ChartJSNodeCanvas } = require("chartjs-node-canvas");
-const { drawTable, generarGrafico } = require("./utils/pdf");
+const { drawTable } = require("./utils/pdf");
 
-/* ======================
-   CONFIG APP
-====================== */
 const app = express();
 const PORT = 3000;
 
 const DATA_FILE = path.join(__dirname, "empleados.json");
 const HIST_FILE = path.join(__dirname, "historial.json");
+const NOMINA_FILE = path.join(__dirname, "nomina.json");
 
 app.use(express.json());
 app.use(express.static("public"));
 
 /* ======================
-   HELPERS EMPLEADOS
+   HELPERS
 ====================== */
-const leer = () => {
-    if (!fs.existsSync(DATA_FILE)) {
-        fs.writeFileSync(DATA_FILE, "[]");
+const leerJSON = file => {
+    if (!fs.existsSync(file)) {
+        fs.writeFileSync(file, "[]");
         return [];
     }
-    return JSON.parse(fs.readFileSync(DATA_FILE, "utf8") || "[]");
+    const c = fs.readFileSync(file, "utf8").trim();
+    return c ? JSON.parse(c) : [];
 };
 
-const guardar = (data) => {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
-};
+const guardarJSON = (file, data) =>
+    fs.writeFileSync(file, JSON.stringify(data, null, 2));
 
 /* ======================
-   HELPERS HISTORIAL
+   HISTORIAL
 ====================== */
-const leerHistorial = () => {
-    if (!fs.existsSync(HIST_FILE)) {
-        fs.writeFileSync(HIST_FILE, "[]");
-        return [];
-    }
-    try {
-        return JSON.parse(fs.readFileSync(HIST_FILE, "utf8") || "[]");
-    } catch {
-        fs.writeFileSync(HIST_FILE, "[]");
-        return [];
-    }
-};
-
 const guardarHistorial = (empleadoId, antes, despues) => {
-    const historial = leerHistorial();
+    const historial = leerJSON(HIST_FILE);
     historial.push({
         empleadoId,
         fecha: new Date().toISOString(),
         antes,
         despues
     });
-    fs.writeFileSync(HIST_FILE, JSON.stringify(historial, null, 2));
+    guardarJSON(HIST_FILE, historial);
 };
 
-
 /* ======================
-   ENDPOINTS
+   EMPLEADOS
 ====================== */
-
-app.get("/api/empleados", (req, res) => {
-    res.json(leer());
-});
+app.get("/api/empleados", (req, res) =>
+    res.json(leerJSON(DATA_FILE))
+);
 
 app.post("/api/empleados", (req, res) => {
-    const empleados = leer();
+    const empleados = leerJSON(DATA_FILE);
+
     const empleado = {
         id: Date.now(),
         personales: req.body.personales,
         laborales: req.body.laborales
     };
+
     empleados.push(empleado);
-    guardar(empleados);
+    guardarJSON(DATA_FILE, empleados);
     res.status(201).json(empleado);
 });
 
 app.put("/api/empleados/:id", (req, res) => {
-    const empleados = leer();
-    const id = parseInt(req.params.id);
+    const empleados = leerJSON(DATA_FILE);
+    const id = Number(req.params.id);
     const index = empleados.findIndex(e => e.id === id);
 
-    if (index === -1) {
+    if (index === -1)
         return res.status(404).json({ error: "Empleado no encontrado" });
-    }
 
-    const anterior = empleados[index];
-    empleados[index] = { ...anterior, ...req.body };
+    const antes = empleados[index];
+    empleados[index] = { ...antes, ...req.body };
 
-    guardar(empleados);
-    guardarHistorial(id, anterior, empleados[index]);
+    guardarJSON(DATA_FILE, empleados);
+    guardarHistorial(id, antes, empleados[index]);
     res.json(empleados[index]);
 });
 
-/* ======================
-   PDF HOJA DE VIDA
-====================== */
-app.get("/api/empleados/:id/pdf", async (req, res) => {
-    const empleados = leer();
-    const emp = empleados.find(e => e.id === parseInt(req.params.id));
+app.delete("/api/empleados/:id", (req, res) => {
+    const empleados = leerJSON(DATA_FILE)
+        .filter(e => e.id !== Number(req.params.id));
 
-    if (!emp) {
-        return res.status(404).send("Empleado no encontrado");
-    }
+    guardarJSON(DATA_FILE, empleados);
+    res.json({ ok: true });
+});
+
+/* ======================
+   HISTORIAL - CONSULTA
+====================== */
+app.get("/api/empleados/:id/historial", (req, res) => {
+    const id = Number(req.params.id);
+    const historial = leerJSON(HIST_FILE)
+        .filter(h => h.empleadoId === id);
+
+    res.json(historial);
+});
+
+
+
+/* ======================
+   NÓMINA
+====================== */
+app.post("/api/nomina/calcular", (req, res) => {
+    const { empleadoId, periodo, novedades } = req.body;
+    const empleados = leerJSON(DATA_FILE);
+    const nomina = leerJSON(NOMINA_FILE);
+
+    const emp = empleados.find(e => e.id === empleadoId);
+    if (!emp) return res.status(404).json({ error: "Empleado no existe" });
+
+    const salario = emp.laborales.salario;
+    const horasExtras = novedades.horasExtras || 0;
+    const bonos = novedades.bonos || 0;
+    const fondo = novedades.deducciones?.fondoEmpleados || 0;
+
+    const valorHora = (salario / 240) * 1.25;
+    const extras = horasExtras * valorHora;
+    const devengado = salario + extras + bonos;
+
+    const salud = devengado * 0.04;
+    const pension = devengado * 0.04;
+    const arl = devengado * 0.00522;
+
+    const deducciones = salud + pension + arl + fondo;
+    const neto = devengado - deducciones;
+
+    const registro = {
+        empleadoId,
+        periodo,
+        salarioBase: salario,
+        novedades,
+        aportes: { salud, pension, arl },
+        totales: { devengado, deducciones, netoPagar: neto },
+        fecha: new Date().toISOString()
+    };
+
+    nomina.push(registro);
+    guardarJSON(NOMINA_FILE, nomina);
+    res.json(registro);
+});
+
+/* ======================
+   PDF NÓMINA
+====================== */
+app.get("/api/nomina/:empleadoId/:periodo/pdf", (req, res) => {
+    const empleados = leerJSON(DATA_FILE);
+    const nomina = leerJSON(NOMINA_FILE);
+
+    const emp = empleados.find(e => e.id === Number(req.params.empleadoId));
+    const reg = nomina.find(n =>
+        n.empleadoId === emp?.id && n.periodo === req.params.periodo
+    );
+
+    if (!emp || !reg) return res.status(404).send("Datos no encontrados");
 
     const doc = new PDFDocument({ margin: 50 });
-
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", "inline; filename=hoja_vida.pdf");
-
     doc.pipe(res);
 
-    doc.fontSize(18).text("HOJA DE VIDA", { align: "center" });
+    doc.fontSize(18).text("DESPRENDIBLE DE NÓMINA", { align: "center" });
     doc.moveDown();
 
-    doc.fontSize(12)
-        .text(`Nombre: ${emp.personales.nombre}`)
-        .text(`Fecha Nacimiento: ${emp.personales.fechaNacimiento}`)
-        .text(`ID Empleado: ${emp.id}`);
+    doc.text(`Empleado: ${emp.personales.nombre}`);
+    doc.text(`Departamento: ${emp.laborales.departamento}`);
+    doc.text(`Periodo: ${reg.periodo}`);
 
-    doc.moveDown(2);
-
-    drawTable(doc, 50, doc.y, ["Campo", "Valor"], [
-        ["Puesto", emp.laborales.puesto],
-        ["Departamento", emp.laborales.departamento],
-        ["Salario", `$${emp.laborales.salario.toLocaleString()}`],
-        ["Fecha Ingreso", emp.laborales.fechaIngreso]
+    doc.moveDown();
+    drawTable(doc, 50, doc.y, ["Concepto", "Valor"], [
+        ["Salario Base", reg.salarioBase],
+        ["Horas Extras", reg.novedades.horasExtras],
+        ["Bonos", reg.novedades.bonos],
+        ["Salud", reg.aportes.salud],
+        ["Pensión", reg.aportes.pension],
+        ["ARL", reg.aportes.arl],
+        ["Neto a pagar", reg.totales.netoPagar]
     ]);
-
-    const grafico = await generarGrafico(emp);
-    doc.addPage();
-    doc.text("Resumen Salarial", { align: "center" });
-    doc.moveDown();
-    doc.image(grafico, { width: 400, align: "center" });
 
     doc.end();
 });
 
-/* ======================
-   START SERVER
-====================== */
-app.listen(PORT, () => {
-    console.log(`Servidor activo en http://localhost:${PORT}`);
-});
+app.listen(PORT, () =>
+    console.log(`Servidor activo en http://localhost:${PORT}`)
+);

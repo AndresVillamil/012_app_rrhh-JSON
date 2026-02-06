@@ -1,0 +1,25 @@
+[
+  {
+    "empleadoId": 1770377131195,
+    "periodo": "2026-01",
+    "salarioBase": 2800000,
+    "novedades": {
+      "horasExtras": 2,
+      "bonos": 0,
+      "deducciones": {
+        "fondoEmpleados": 0
+      }
+    },
+    "aportes": {
+      "salud": 113166.66666666666,
+      "pension": 113166.66666666666,
+      "arl": 14768.249999999998
+    },
+    "totales": {
+      "devengado": 2829166.6666666665,
+      "deducciones": 241101.5833333333,
+      "netoPagar": 2588065.083333333
+    },
+    "fecha": "2026-02-06T11:26:04.861Z"
+  }
+]

@@ -2,47 +2,45 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Gestión de Empleados</title>
+    <title>RRHH - Gestión</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-<h1>Ficha Hoja de Vida</h1>
+<h1>Gestión de Empleados</h1>
 
 <form id="formEmpleado">
-    <fieldset>
-        <legend>Datos personales</legend>
-
-        <label>Nombre completo</label>
-        <input type="text" id="nombre" required>
-
-        <label>Fecha de nacimiento</label>
-        <input type="date" id="fechaNacimiento" required>
-    </fieldset>
-
-    <fieldset>
-        <legend>Datos laborales</legend>
-
-        <label>Puesto</label>
-        <input type="text" id="puesto" required>
-
-        <label>Departamento</label>
-        <input type="text" id="departamento" required>
-
-        <label>Salario mensual</label>
-        <input type="number" id="salario" required>
-
-        <label>Fecha de ingreso</label>
-        <input type="date" id="fechaIngreso" required>
-    </fieldset>
-
-    <button type="submit">Guardar empleado</button>
+    <input id="nombre" placeholder="Nombre" required>
+    <input type="date" id="fechaNacimiento" required>
+    <input id="puesto" placeholder="Puesto" required>
+    <input id="departamento" placeholder="Departamento" required>
+    <input type="number" id="salario" placeholder="Salario" required>
+    <input type="date" id="fechaIngreso" required>
+    <button>Guardar</button>
 </form>
+
+<h2>Empleados</h2>
+<div id="listaEmpleados"></div>
 
 <hr>
 
-<h2>Empleados registrados</h2>
-<div id="listaEmpleados"></div>
+<h2>Historial de cambios</h2>
+<div id="historial"></div>
+
+<hr>
+
+<h2>Nómina mensual</h2>
+<form id="formNomina">
+    <select id="empleadoNomina"></select>
+    <input type="month" id="periodo" required>
+    <input type="number" id="horasExtras" placeholder="Horas extras">
+    <input type="number" id="bonos" placeholder="Bonos">
+    <input type="number" id="fondo" placeholder="Fondo empleados">
+    <button>Calcular</button>
+</form>
+
+<div id="resultadoNomina"></div>
+<button id="btnPdfNomina" style="display:none">🖨️ PDF nómina</button>
 
 <script src="app.js"></script>
 </body>
