@@ -106,11 +106,23 @@ app.get("/api/empleados/:id/historial", (req, res) => {
 ====================== */
 app.post("/api/nomina/calcular", (req, res) => {
     const { empleadoId, periodo, novedades } = req.body;
+
     const empleados = leerJSON(DATA_FILE);
     const nomina = leerJSON(NOMINA_FILE);
 
     const emp = empleados.find(e => e.id === empleadoId);
     if (!emp) return res.status(404).json({ error: "Empleado no existe" });
+
+    const index = nomina.findIndex(n =>
+        n.empleadoId === empleadoId && n.periodo === periodo
+    );
+
+    // ❌ Período cerrado → NO modificar
+    if (index !== -1 && nomina[index].cerrado) {
+        return res.status(400).json({
+            error: "El período está cerrado y no puede modificarse"
+        });
+    }
 
     const salario = emp.laborales.salario;
     const horasExtras = novedades.horasExtras || 0;
@@ -123,7 +135,7 @@ app.post("/api/nomina/calcular", (req, res) => {
 
     const salud   = Math.round(devengado * 0.04);
     const pension = Math.round(devengado * 0.04);
-const arl     = Math.round(devengado * 0.00522);
+    const arl     = Math.round(devengado * 0.00522);
 
     const deducciones = salud + pension + arl + fondo;
     const neto = devengado - deducciones;
@@ -135,13 +147,48 @@ const arl     = Math.round(devengado * 0.00522);
         novedades,
         aportes: { salud, pension, arl },
         totales: { devengado, deducciones, netoPagar: neto },
-        fecha: new Date().toISOString()
+        cerrado: false,
+        fechaGeneracion: new Date().toISOString()
     };
 
-    nomina.push(registro);
+    // 🔁 Sobrescribe si existe y está abierto
+    if (index !== -1) {
+        nomina[index] = { ...nomina[index], ...registro };
+    } else {
+        nomina.push(registro);
+    }
+
     guardarJSON(NOMINA_FILE, nomina);
     res.json(registro);
 });
+
+app.post("/api/nomina/cerrar", (req, res) => {
+    const { periodo } = req.body;
+    const nomina = leerJSON(NOMINA_FILE);
+
+    let cerrados = 0;
+
+    nomina.forEach(n => {
+        if (n.periodo === periodo && !n.cerrado) {
+            n.cerrado = true;
+            n.fechaCierre = new Date().toISOString();
+            cerrados++;
+        }
+    });
+
+    if (!cerrados)
+        return res.status(404).json({
+            error: "No hay nóminas abiertas para este período"
+        });
+
+    guardarJSON(NOMINA_FILE, nomina);
+    res.json({
+        ok: true,
+        periodo,
+        registrosCerrados: cerrados
+    });
+});
+
 
 /* ======================
    PDF NÓMINA

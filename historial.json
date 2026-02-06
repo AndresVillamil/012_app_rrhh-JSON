@@ -88,5 +88,35 @@
         "fechaIngreso": "2025-01-01"
       }
     }
+  },
+  {
+    "empleadoId": 1770421542429,
+    "fecha": "2026-02-06T23:46:01.450Z",
+    "antes": {
+      "id": 1770421542429,
+      "personales": {
+        "nombre": "MARCOS WITH",
+        "fechaNacimiento": "1980-04-01"
+      },
+      "laborales": {
+        "puesto": "MANAGER",
+        "departamento": "DBP",
+        "salario": 4500000,
+        "fechaIngreso": "2024-01-01"
+      }
+    },
+    "despues": {
+      "id": 1770421542429,
+      "personales": {
+        "nombre": "MARCOS WITH",
+        "fechaNacimiento": "1972-04-01"
+      },
+      "laborales": {
+        "puesto": "MANAGER",
+        "departamento": "DBP",
+        "salario": 4500000,
+        "fechaIngreso": "2024-01-01"
+      }
+    }
   }
 ]

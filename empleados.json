@@ -13,19 +13,6 @@
     }
   },
   {
-    "id": 1770290050798,
-    "personales": {
-      "nombre": "JHON MARCOS WITH",
-      "fechaNacimiento": "1988-05-01"
-    },
-    "laborales": {
-      "puesto": "TECNICO",
-      "departamento": "DBP",
-      "salario": 3200000,
-      "fechaIngreso": "2005-06-01"
-    }
-  },
-  {
     "id": 1770374419842
   },
   {
@@ -39,6 +26,19 @@
       "departamento": "MANTENIMIENTO",
       "salario": 2800002,
       "fechaIngreso": "2025-01-01"
+    }
+  },
+  {
+    "id": 1770421542429,
+    "personales": {
+      "nombre": "MARCOS WITH",
+      "fechaNacimiento": "1972-04-01"
+    },
+    "laborales": {
+      "puesto": "MANAGER",
+      "departamento": "DBP",
+      "salario": 4500000,
+      "fechaIngreso": "2024-01-01"
     }
   }
 ]

@@ -4,22 +4,23 @@
     "periodo": "2026-01",
     "salarioBase": 3500000,
     "novedades": {
-      "horasExtras": 4,
+      "horasExtras": 5,
       "bonos": 0,
       "deducciones": {
         "fondoEmpleados": 0
       }
     },
     "aportes": {
-      "salud": 142917,
-      "pension": 142917,
-      "arl": 18651
+      "salud": 143646,
+      "pension": 143646,
+      "arl": 18746
     },
     "totales": {
-      "devengado": 3572917,
-      "deducciones": 304485,
-      "netoPagar": 3268432
+      "devengado": 3591146,
+      "deducciones": 306038,
+      "netoPagar": 3285108
     },
-    "fecha": "2026-02-06T21:15:48.480Z"
+    "cerrado": false,
+    "fechaGeneracion": "2026-02-06T23:44:26.949Z"
   }
 ]
