@@ -93,3 +93,7 @@ button:hover {
     background: #f4f6f8;
     border-left: 4px solid #555;
 }
+
+.antes { color: #b00020; }
+.despues { color: #2e7d32; font-weight: bold; }
+.cambio { margin-bottom: 6px; }

@@ -58,5 +58,35 @@
         "fechaIngreso": "2025-01-01"
       }
     }
+  },
+  {
+    "empleadoId": 1770377131195,
+    "fecha": "2026-02-06T20:25:48.880Z",
+    "antes": {
+      "id": 1770377131195,
+      "personales": {
+        "nombre": "PEDRO PEREZ",
+        "fechaNacimiento": "1998-05-02"
+      },
+      "laborales": {
+        "puesto": "MECANICO",
+        "departamento": "MANTENIMIENTO",
+        "salario": 2800000,
+        "fechaIngreso": "2025-01-01"
+      }
+    },
+    "despues": {
+      "id": 1770377131195,
+      "personales": {
+        "nombre": "PEDRO PEREZ OSA",
+        "fechaNacimiento": "1999-05-02"
+      },
+      "laborales": {
+        "puesto": "MECANICO",
+        "departamento": "MANTENIMIENTO",
+        "salario": 2800002,
+        "fechaIngreso": "2025-01-01"
+      }
+    }
   }
 ]

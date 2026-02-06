@@ -116,6 +116,49 @@ formNomina.addEventListener("submit", async e => {
     btnPdfNomina.onclick = () =>
         window.open(`/api/nomina/${body.empleadoId}/${body.periodo}/pdf`);
 });
+// ======================
+// Render Historial de cambios
+// ======================
+/***********************************
+ * Labels visibles para el usuario
+ ***********************************/
+const labels = {
+  salario: "Salario",
+  puesto: "Cargo",
+  departamento: "Departamento",
+  fechaIngreso: "Fecha de ingreso",
+  nombre: "Nombre",
+  fechaNacimiento: "Fecha de nacimiento"
+};
+
+const renderCambios = (antes, despues) => {
+    let html = "";
+
+    for (const seccion in despues) {
+        for (const campo in despues[seccion]) {
+            const valorAntes = antes?.[seccion]?.[campo];
+            const valorDespues = despues[seccion][campo];
+
+            if (valorAntes !== valorDespues) {
+                html += `
+                    <div class="cambio">
+                        <b>${labels[campo] || campo}:</b>
+                        <span class="antes">${valorAntes ?? "—"}</span>
+                        →
+                        <span class="despues">${valorDespues}</span>
+                    </div>
+                `;
+            }
+        }
+    }
+    return html || "<i>Sin cambios relevantes</i>";
+};
+
+
+
+// ======================
+// HISTORIAL DE CAMBIOS
+// ======================
 
 const verHistorial = async empleadoId => {
     const res = await fetch(`/api/empleados/${empleadoId}/historial`);
@@ -127,12 +170,11 @@ const verHistorial = async empleadoId => {
     }
 
     historialDiv.innerHTML = historial.map(h => `
-        <div class="card">
-            <b>Fecha:</b> ${new Date(h.fecha).toLocaleString()}<br>
-            <b>Antes:</b> ${JSON.stringify(h.antes)}<br>
-            <b>Después:</b> ${JSON.stringify(h.despues)}
-        </div>
-    `).join("");
+    <div class="card">
+        <b>Fecha:</b> ${new Date(h.fecha).toLocaleString()}<br><br>
+        ${renderCambios(h.antes, h.despues)}
+    </div>
+`).join("");
 };
 
 const editarEmpleado = id => {

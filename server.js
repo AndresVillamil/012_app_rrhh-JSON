@@ -118,12 +118,12 @@ app.post("/api/nomina/calcular", (req, res) => {
     const fondo = novedades.deducciones?.fondoEmpleados || 0;
 
     const valorHora = (salario / 240) * 1.25;
-    const extras = horasExtras * valorHora;
-    const devengado = salario + extras + bonos;
+    const extras = Math.round(horasExtras * valorHora);
+    const devengado = Math.round(salario + extras + bonos);
 
-    const salud = devengado * 0.04;
-    const pension = devengado * 0.04;
-    const arl = devengado * 0.00522;
+    const salud   = Math.round(devengado * 0.04);
+    const pension = Math.round(devengado * 0.04);
+const arl     = Math.round(devengado * 0.00522);
 
     const deducciones = salud + pension + arl + fondo;
     const neto = devengado - deducciones;
