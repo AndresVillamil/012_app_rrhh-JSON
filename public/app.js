@@ -199,3 +199,32 @@ const eliminarEmpleado = async id => {
 };
 
 cargarEmpleados();
+
+const verAuditoriaNomina = async (empleadoId, periodo) => {
+    const res = await fetch(
+        `/api/nomina/${empleadoId}/${periodo}/auditoria`
+    );
+
+    const data = await res.json();
+
+    if (!data.length) {
+        alert("No hay auditoría para este período");
+        return;
+    }
+
+    let texto = "AUDITORÍA DE NÓMINA\n\n";
+
+    data.forEach(a => {
+        texto += `
+Fecha: ${new Date(a.fecha).toLocaleString()}
+-------------------------
+ANTES:
+${JSON.stringify(a.antes.totales, null, 2)}
+
+DESPUÉS:
+${JSON.stringify(a.despues.totales, null, 2)}
+\n`;
+    });
+
+    alert(texto);
+};

@@ -43,6 +43,31 @@ const guardarHistorial = (empleadoId, antes, despues) => {
     guardarJSON(HIST_FILE, historial);
 };
 
+
+/* ======================
+ HELPER PARA AUDITORÍA
+====================== */
+
+const AUDIT_NOMINA_FILE = path.join(__dirname, "auditoria_nomina.json");
+
+const guardarAuditoriaNomina = (empleadoId, periodo, antes, despues) => {
+    const auditoria = leerJSON(AUDIT_NOMINA_FILE);
+
+    auditoria.push({
+        empleadoId,
+        periodo,
+        fecha: new Date().toISOString(),
+        accion: "RECALCULO",
+        antes,
+        despues
+    });
+
+    guardarJSON(AUDIT_NOMINA_FILE, auditoria);
+};
+
+
+// Endpoints
+
 /* ======================
    EMPLEADOS
 ====================== */
@@ -105,25 +130,15 @@ app.get("/api/empleados/:id/historial", (req, res) => {
    NÓMINA
 ====================== */
 app.post("/api/nomina/calcular", (req, res) => {
+    
     const { empleadoId, periodo, novedades } = req.body;
 
     const empleados = leerJSON(DATA_FILE);
     const nomina = leerJSON(NOMINA_FILE);
 
     const emp = empleados.find(e => e.id === empleadoId);
-    if (!emp) return res.status(404).json({ error: "Empleado no existe" });
 
-    const index = nomina.findIndex(n =>
-        n.empleadoId === empleadoId && n.periodo === periodo
-    );
-
-    // ❌ Período cerrado → NO modificar
-    if (index !== -1 && nomina[index].cerrado) {
-        return res.status(400).json({
-            error: "El período está cerrado y no puede modificarse"
-        });
-    }
-
+    //Construir el registro
     const salario = emp.laborales.salario;
     const horasExtras = novedades.horasExtras || 0;
     const bonos = novedades.bonos || 0;
@@ -150,6 +165,39 @@ app.post("/api/nomina/calcular", (req, res) => {
         cerrado: false,
         fechaGeneracion: new Date().toISOString()
     };
+
+    if (!emp) return res.status(404).json({ error: "Empleado no existe" });
+
+    const index = nomina.findIndex(n =>
+        n.empleadoId === empleadoId && n.periodo === periodo
+    );
+
+    // ❌ Período cerrado → NO modificar
+   if (index !== -1) {
+    const antes = { ...nomina[index] };
+
+    // opcional: validar cerrado
+    if (nomina[index].cerrado) {
+        return res.status(400).json({
+            error: "El período está cerrado y no puede modificarse"
+        });
+    }
+
+    nomina[index] = { ...nomina[index], ...registro };
+
+    guardarAuditoriaNomina(
+        empleadoId,
+        periodo,
+        antes,
+        nomina[index]
+    );
+} else {
+    nomina.push(registro);
+}
+
+
+
+    
 
     // 🔁 Sobrescribe si existe y está abierto
     if (index !== -1) {
@@ -187,6 +235,17 @@ app.post("/api/nomina/cerrar", (req, res) => {
         periodo,
         registrosCerrados: cerrados
     });
+});
+
+app.get("/api/nomina/:empleadoId/:periodo/auditoria", (req, res) => {
+    const { empleadoId, periodo } = req.params;
+
+    const auditoria = leerJSON(AUDIT_NOMINA_FILE).filter(a =>
+        a.empleadoId === Number(empleadoId) &&
+        a.periodo === periodo
+    );
+
+    res.json(auditoria);
 });
 
 
