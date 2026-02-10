@@ -118,5 +118,35 @@
         "fechaIngreso": "2024-01-01"
       }
     }
+  },
+  {
+    "empleadoId": 1770222091944,
+    "fecha": "2026-02-09T13:02:17.529Z",
+    "antes": {
+      "id": 1770222091944,
+      "personales": {
+        "nombre": "EDWIN VILLAMIL LAVERDE",
+        "fechaNacimiento": "1977-10-11"
+      },
+      "laborales": {
+        "puesto": "Consultor Funcional HCM ",
+        "departamento": "DBP",
+        "salario": 3500000,
+        "fechaIngreso": "2019-03-19"
+      }
+    },
+    "despues": {
+      "id": 1770222091944,
+      "personales": {
+        "nombre": "EDWIN VILLAMIL LAVERDE",
+        "fechaNacimiento": "1977-10-11"
+      },
+      "laborales": {
+        "puesto": "Consultor Funcional HCM ",
+        "departamento": "DBP",
+        "salario": 3500000,
+        "fechaIngreso": "2019-03-10"
+      }
+    }
   }
 ]

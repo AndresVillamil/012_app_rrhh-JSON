@@ -9,7 +9,7 @@ h1, h2 {
 }
 
 form {
-    background: white;
+    background: gray;
     max-width: 600px;
     margin: auto;
     padding: 20px;
@@ -97,3 +97,35 @@ button:hover {
 .antes { color: #b00020; }
 .despues { color: #2e7d32; font-weight: bold; }
 .cambio { margin-bottom: 6px; }
+
+.timeline {
+    border-left: 3px solid #3498db;
+    padding-left: 20px;
+    margin-top: 20px;
+}
+
+.timeline-item {
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.timeline-item::before {
+    content: "";
+    position: absolute;
+    left: -11px;
+    top: 5px;
+    width: 14px;
+    height: 14px;
+    background: #3498db;
+    border-radius: 50%;
+}
+
+.antes {
+    color: #c0392b;
+    text-decoration: line-through;
+}
+
+.despues {
+    color: #27ae60;
+    font-weight: bold;
+}

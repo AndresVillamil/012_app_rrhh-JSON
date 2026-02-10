@@ -19,16 +19,18 @@ const calcularAnios = fecha => {
 const cargarEmpleados = async () => {
     const res = await fetch("/api/empleados");
     const empleados = await res.json();
-
+    console.log("Empleados cargados:", empleados);  // ✅ DEBUG
     empleadosCache = empleados;   // ✅ CLAVE: cache global para editar
 
     lista.innerHTML = "";
     empleadoNomina.innerHTML = "";
 
     empleados.forEach(e => {
+        console.log("Procesando empleado:", e);  // ✅ DEBUG
         if (!e || !e.laborales || !e.personales) return;
 
         const anios = calcularAnios(e.laborales.fechaIngreso);
+        
 
         empleadoNomina.innerHTML += `
             <option value="${e.id}">
@@ -200,31 +202,57 @@ const eliminarEmpleado = async id => {
 
 cargarEmpleados();
 
-const verAuditoriaNomina = async (empleadoId, periodo) => {
-    const res = await fetch(
-        `/api/nomina/${empleadoId}/${periodo}/auditoria`
-    );
+const timelineDiv = document.getElementById("timelineAuditoria");
 
+const verAuditoriaNomina = async (empleadoId, periodo) => {
+    const res = await fetch(`/api/nomina/${empleadoId}/${periodo}/auditoria`);
     const data = await res.json();
 
     if (!data.length) {
-        alert("No hay auditoría para este período");
+        timelineDiv.innerHTML = "<i>Sin auditoría registrada</i>";
         return;
     }
 
-    let texto = "AUDITORÍA DE NÓMINA\n\n";
+    timelineDiv.innerHTML = data.map(a => `
+        <div class="timeline-item">
+            <b>${new Date(a.fecha).toLocaleString()}</b><br>
+            Acción: ${a.accion}
+            ${compararCambios(a.antes, a.despues)}
+        </div>
+    `).join("");
+};
 
-    data.forEach(a => {
-        texto += `
-Fecha: ${new Date(a.fecha).toLocaleString()}
--------------------------
-ANTES:
-${JSON.stringify(a.antes.totales, null, 2)}
+const compararCambios = (antes, despues) => {
+    let html = "<ul>";
 
-DESPUÉS:
-${JSON.stringify(a.despues.totales, null, 2)}
-\n`;
-    });
+    for (const key in despues.totales) {
+        const a = antes.totales[key];
+        const d = despues.totales[key];
 
-    alert(texto);
+        if (a !== d) {
+            html += `
+                <li>
+                    <b>${key}</b>:
+                    <span class="antes">$${a.toLocaleString()}</span>
+                    →
+                    <span class="despues">$${d.toLocaleString()}</span>
+                </li>
+            `;
+        }
+    }
+
+    html += "</ul>";
+    return html;
+};
+
+const verAuditoriaDesdeUI = () => {
+    const empleadoId = Number(empleadoNomina.value);
+    const periodoSel = periodo.value;
+
+    if (!empleadoId || !periodoSel) {
+        alert("Seleccione empleado y período");
+        return;
+    }
+
+    verAuditoriaNomina(empleadoId, periodoSel);
 };

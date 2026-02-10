@@ -4,47 +4,47 @@
     "periodo": "2026-01",
     "salarioBase": 3500000,
     "novedades": {
-      "horasExtras": 8,
-      "bonos": 2000,
-      "deducciones": {
-        "fondoEmpleados": 3
-      }
-    },
-    "aportes": {
-      "salud": 145913,
-      "pension": 145913,
-      "arl": 19042
-    },
-    "totales": {
-      "devengado": 3647833,
-      "deducciones": 310871,
-      "netoPagar": 3336962
-    },
-    "cerrado": false,
-    "fechaGeneracion": "2026-02-07T01:12:18.700Z"
-  },
-  {
-    "empleadoId": 1770222091944,
-    "periodo": "2026-01",
-    "salarioBase": 3500000,
-    "novedades": {
-      "horasExtras": 5,
+      "horasExtras": 3,
       "bonos": 0,
       "deducciones": {
         "fondoEmpleados": 0
       }
     },
     "aportes": {
-      "salud": 143646,
-      "pension": 143646,
-      "arl": 18746
+      "salud": 142188,
+      "pension": 142188,
+      "arl": 18555
     },
     "totales": {
-      "devengado": 3591146,
-      "deducciones": 306038,
-      "netoPagar": 3285108
+      "devengado": 3554688,
+      "deducciones": 302931,
+      "netoPagar": 3251757
     },
     "cerrado": false,
-    "fechaGeneracion": "2026-02-07T01:10:38.120Z"
+    "fechaGeneracion": "2026-02-08T22:29:17.461Z"
+  },
+  {
+    "empleadoId": 1770222091944,
+    "periodo": "2026-01",
+    "salarioBase": 3500000,
+    "novedades": {
+      "horasExtras": 4,
+      "bonos": 2700,
+      "deducciones": {
+        "fondoEmpleados": 500
+      }
+    },
+    "aportes": {
+      "salud": 143025,
+      "pension": 143025,
+      "arl": 18665
+    },
+    "totales": {
+      "devengado": 3575617,
+      "deducciones": 305215,
+      "netoPagar": 3270402
+    },
+    "cerrado": false,
+    "fechaGeneracion": "2026-02-07T01:29:56.425Z"
   }
 ]
