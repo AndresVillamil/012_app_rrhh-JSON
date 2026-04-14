@@ -2,48 +2,89 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Gestión de Empleados</title>
+    <title>RRHH - Gestión</title>
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Estilos -->
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-<h1>Ficha Hoja de Vida</h1>
+<div class="container mt-4">
 
-<form id="formEmpleado">
-    <fieldset>
-        <legend>Datos personales</legend>
+    <h1 class="text-center mb-4">Gestión de Empleados</h1>
 
-        <label>Nombre completo</label>
-        <input type="text" id="nombre" required>
+    <!-- ====================== -->
+    <!-- FORM EMPLEADO -->
+    <!-- ====================== -->
+    <form id="formEmpleado" class="card p-4 shadow mb-4">
+        <input id="nombre" class="form-control mb-2" placeholder="Nombre" required>
+        <input type="date" id="fechaNacimiento" class="form-control mb-2" required>
 
-        <label>Fecha de nacimiento</label>
-        <input type="date" id="fechaNacimiento" required>
-    </fieldset>
+        <input id="puesto" class="form-control mb-2" placeholder="Puesto" required>
+        <input id="departamento" class="form-control mb-2" placeholder="Departamento" required>
 
-    <fieldset>
-        <legend>Datos laborales</legend>
+        <input type="number" id="salario" class="form-control mb-2" placeholder="Salario" required>
+        <input type="date" id="fechaIngreso" class="form-control mb-3" required>
 
-        <label>Puesto</label>
-        <input type="text" id="puesto" required>
+        <button class="btn btn-primary">Guardar</button>
+    </form>
 
-        <label>Departamento</label>
-        <input type="text" id="departamento" required>
+    <!-- ====================== -->
+    <!-- LISTA EMPLEADOS -->
+    <!-- ====================== -->
+    <h2 class="mb-3">Empleados</h2>
+    <div id="listaEmpleados" class="mb-4"></div>
 
-        <label>Salario mensual</label>
-        <input type="number" id="salario" required>
+    <!-- ====================== -->
+    <!-- HISTORIAL -->
+    <!-- ====================== -->
+    <h2 class="mb-3">Historial de cambios</h2>
+    <div id="historial" class="mb-4"></div>
 
-        <label>Fecha de ingreso</label>
-        <input type="date" id="fechaIngreso" required>
-    </fieldset>
+    <hr>
 
-    <button type="submit">Guardar empleado</button>
-</form>
+    <!-- ====================== -->
+    <!-- NÓMINA -->
+    <!-- ====================== -->
+    <h2 class="mb-3">Nómina mensual</h2>
 
-<hr>
+    <form id="formNomina" class="card p-3 shadow mb-3">
 
-<h2>Empleados registrados</h2>
-<div id="listaEmpleados"></div>
+        <select id="empleadoNomina" class="form-select mb-2"></select>
 
-<script src="app.js"></script>
+        <input type="month" id="periodo" class="form-control mb-2" required>
+
+        <input type="number" id="horasExtras" class="form-control mb-2" placeholder="Horas extras">
+        <input type="number" id="bonos" class="form-control mb-2" placeholder="Bonos">
+        <input type="number" id="fondo" class="form-control mb-2" placeholder="Fondo empleados">
+
+        <button class="btn btn-success">Calcular</button>
+    </form>
+
+    <div id="resultadoNomina" class="mb-3"></div>
+
+    <button id="btnPdfNomina" class="btn btn-secondary mb-4" style="display:none">
+        🖨️ PDF nómina
+    </button>
+
+    <!-- ====================== -->
+    <!-- AUDITORÍA -->
+    <!-- ====================== -->
+    <h2 class="mb-3">📜 Auditoría de Nómina</h2>
+
+    <div id="timelineAuditoria" class="timeline mb-3"></div>
+
+    <button class="btn btn-info" onclick="verAuditoriaDesdeUI()">
+        🕒 Ver auditoría
+    </button>
+
+</div>
+
+<!-- ⚠️ MUY IMPORTANTE -->
+<script type="module" src="./app.js"></script>
+
 </body>
 </html>

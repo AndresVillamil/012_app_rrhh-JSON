@@ -1,47 +1,57 @@
+import { api } from './modules/api.js';
+import { ui } from './modules/ui.js';
+
+// ======================
+// REFERENCIAS DOM
+// ======================
 const form = document.getElementById("formEmpleado");
 const lista = document.getElementById("listaEmpleados");
+const formNomina = document.getElementById("formNomina");
+const empleadoNomina = document.getElementById("empleadoNomina");
+const resultadoNomina = document.getElementById("resultadoNomina");
+const btnPdfNomina = document.getElementById("btnPdfNomina");
+const historialDiv = document.getElementById("historial");
+const timelineDiv = document.getElementById("timelineAuditoria");
 
-/* ======================
-   CACHE GLOBAL
-====================== */
+// ======================
+// ESTADO GLOBAL
+// ======================
 let empleadosCache = [];
 let editandoId = null;
 
-/* ======================
-   UTILIDADES
-====================== */
-const diasEntreFechas = (inicio, fin = new Date()) => {
-    return Math.floor((new Date(fin) - new Date(inicio)) / 86400000);
+// ======================
+// HELPERS
+// ======================
+const calcularAnios = fecha => {
+    if (!fecha) return 0;
+    const inicio = new Date(fecha);
+    const hoy = new Date();
+    return Math.floor((hoy - inicio) / (1000 * 60 * 60 * 24 * 365));
 };
 
-const calcularEdad = fecha => {
-    return Math.floor(diasEntreFechas(fecha) / 365);
+// ======================
+// CARGAR EMPLEADOS
+// ======================
+const cargarEmpleados = async () => {
+    try {
+        const empleados = await api.obtenerEmpleados();
+
+        empleadosCache = empleados;
+
+        ui.renderEmpleados(empleados, lista, empleadoNomina);
+
+    } catch (error) {
+        console.error("Error cargando empleados:", error);
+    }
 };
 
-const prestacionesAnuales = (salario, fechaIngreso) => {
-    const dias = Math.min(diasEntreFechas(fechaIngreso), 360);
-
-    return {
-        dias,
-        vacaciones: salario * (15 / 360) * (dias / 30),
-        prima: salario * (30 / 360) * (dias / 30),
-        cesantias: salario * (30 / 360) * (dias / 30)
-    };
-};
-
-/* ======================
-   GUARDAR / EDITAR
-====================== */
+// ======================
+// FORM EMPLEADO
+// ======================
 form.addEventListener("submit", async e => {
     e.preventDefault();
 
-    // Validación básica
-    if (!nombre.value || !puesto.value || !salario.value) {
-        alert("Formulario incompleto");
-        return;
-    }
-
-    const empleado = {
+    const body = {
         personales: {
             nombre: nombre.value,
             fechaNacimiento: fechaNacimiento.value
@@ -49,101 +59,126 @@ form.addEventListener("submit", async e => {
         laborales: {
             puesto: puesto.value,
             departamento: departamento.value,
-            salario: parseFloat(salario.value),
+            salario: Number(salario.value),
             fechaIngreso: fechaIngreso.value
         }
     };
 
-    const url = editandoId
-        ? `/api/empleados/${editandoId}`
-        : "/api/empleados";
-
-    const method = editandoId ? "PUT" : "POST";
-
     try {
-        await fetch(url, {
-            method,
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(empleado)
-        });
+        await api.guardarEmpleado(body, editandoId);
 
         editandoId = null;
         form.reset();
         cargarEmpleados();
-    } catch (err) {
-        console.error(err);
-        alert("Error guardando empleado");
+
+    } catch (error) {
+        console.error("Error guardando empleado:", error);
     }
 });
 
-/* ======================
-   CARGAR EMPLEADOS
-====================== */
-const cargarEmpleados = async () => {
-    const res = await fetch("/api/empleados");
-    empleadosCache = await res.json();
+// ======================
+// FORM NÓMINA
+// ======================
+formNomina.addEventListener("submit", async e => {
+    e.preventDefault();
 
-    lista.innerHTML = "";
+    const body = {
+        empleadoId: Number(empleadoNomina.value),
+        periodo: periodo.value,
+        novedades: {
+            horasExtras: Number(horasExtras.value || 0),
+            bonos: Number(bonos.value || 0),
+            deducciones: {
+                fondoEmpleados: Number(fondo.value || 0)
+            }
+        }
+    };
 
-    empleadosCache.forEach(e => {
-        const edad = calcularEdad(e.personales.fechaNacimiento);
-        const antiguedad = Math.floor(
-            diasEntreFechas(e.laborales.fechaIngreso) / 365
-        );
+    try {
+        const n = await api.calcularNomina(body);
 
-        const pres = prestacionesAnuales(
-            e.laborales.salario,
-            e.laborales.fechaIngreso
-        );
+        if (n.error) return alert(n.error);
 
-        lista.innerHTML += `
-        <div class="card">
-            <b>${e.personales.nombre}</b><br>
-            Edad: ${edad} años<br>
-            Puesto: ${e.laborales.puesto}<br>
-            Departamento: ${e.laborales.departamento}<br>
-            Antigüedad: ${antiguedad} años<br>
+        ui.mostrarResultadoNomina(n, resultadoNomina);
 
-            <table class="tabla">
-                <tr><th>Prestación</th><th>Valor</th></tr>
-                <tr><td>Vacaciones</td><td>$${pres.vacaciones.toLocaleString()}</td></tr>
-                <tr><td>Prima</td><td>$${pres.prima.toLocaleString()}</td></tr>
-                <tr><td>Cesantías</td><td>$${pres.cesantias.toLocaleString()}</td></tr>
-            </table>
+        btnPdfNomina.style.display = "inline";
+        btnPdfNomina.onclick = () =>
+            window.open(`/api/nomina/${body.empleadoId}/${body.periodo}/pdf`);
 
-            <p>Días trabajados año: ${pres.dias}</p>
-
-            <button onclick="eliminarEmpleado(${e.id})">🗑️ Eliminar</button>
-            <button onclick="editarEmpleado(${e.id})">✏️ Editar</button>
-            <button onclick="verHistorial(${e.id})">📜 Historial</button>
-            <a href="/api/empleados/${e.id}/pdf" target="_blank">🖨️ PDF</a>
-
-            <div id="historial-${e.id}" class="historial"></div>
-        </div>`;
-    });
-};
-
-cargarEmpleados();
-
-/* ======================
-   ELIMINAR
-====================== */
-const eliminarEmpleado = async (id) => {
-    if (!confirm("¿Eliminar este empleado?")) return;
-
-    await fetch(`/api/empleados/${id}`, { method: "DELETE" });
-    cargarEmpleados();
-};
-
-/* ======================
-   EDITAR
-====================== */
-const editarEmpleado = (id) => {
-    const e = empleadosCache.find(emp => emp.id === id);
-    if (!e) {
-        alert("Empleado no encontrado");
-        return;
+    } catch (error) {
+        console.error("Error calculando nómina:", error);
     }
+});
+
+// ======================
+// LABELS PARA HISTORIAL
+// ======================
+const labels = {
+    salario: "Salario",
+    puesto: "Cargo",
+    departamento: "Departamento",
+    fechaIngreso: "Fecha de ingreso",
+    nombre: "Nombre",
+    fechaNacimiento: "Fecha de nacimiento"
+};
+
+// ======================
+// RENDER CAMBIOS
+// ======================
+const renderCambios = (antes, despues) => {
+    let html = "";
+
+    for (const seccion in despues) {
+        for (const campo in despues[seccion]) {
+            const valorAntes = antes?.[seccion]?.[campo];
+            const valorDespues = despues[seccion][campo];
+
+            if (valorAntes !== valorDespues) {
+                html += `
+                    <div class="cambio">
+                        <b>${labels[campo] || campo}:</b>
+                        <span class="antes">${valorAntes ?? "—"}</span>
+                        →
+                        <span class="despues">${valorDespues}</span>
+                    </div>
+                `;
+            }
+        }
+    }
+
+    return html || "<i>Sin cambios relevantes</i>";
+};
+
+// ======================
+// HISTORIAL
+// ======================
+const verHistorial = async empleadoId => {
+    try {
+        const historial = await api.obtenerHistorial(empleadoId);
+
+        if (!historial.length) {
+            historialDiv.innerHTML = "<i>Sin cambios registrados</i>";
+            return;
+        }
+
+        historialDiv.innerHTML = historial.map(h => `
+            <div class="card">
+                <b>Fecha:</b> ${new Date(h.fecha).toLocaleString()}<br><br>
+                ${renderCambios(h.antes, h.despues)}
+            </div>
+        `).join("");
+
+    } catch (error) {
+        console.error("Error cargando historial:", error);
+    }
+};
+
+// ======================
+// EDITAR
+// ======================
+const editarEmpleado = id => {
+    const e = empleadosCache.find(emp => emp.id === id);
+    if (!e) return;
 
     nombre.value = e.personales.nombre;
     fechaNacimiento.value = e.personales.fechaNacimiento;
@@ -155,52 +190,90 @@ const editarEmpleado = (id) => {
     editandoId = id;
 };
 
-/* ======================
-   HISTORIAL
-====================== */
-const verHistorial = async (id) => {
-    const contenedor = document.getElementById(`historial-${id}`);
+// ======================
+// ELIMINAR
+// ======================
+const eliminarEmpleado = async id => {
+    if (!confirm("¿Eliminar empleado?")) return;
 
-    // Toggle
-    if (contenedor.innerHTML.trim() !== "") {
-        contenedor.innerHTML = "";
-        return;
+    try {
+        await api.eliminarEmpleado(id);
+        cargarEmpleados();
+    } catch (error) {
+        console.error("Error eliminando empleado:", error);
     }
-
-    const res = await fetch(`/api/empleados/${id}/historial`);
-    const historial = await res.json();
-
-    if (historial.length === 0) {
-        contenedor.innerHTML = "<p>Sin cambios registrados.</p>";
-        return;
-    }
-
-    let html = `
-        <h4>Historial de cambios</h4>
-        <table class="tabla">
-            <tr>
-                <th>Fecha</th>
-                <th>Antes</th>
-                <th>Después</th>
-            </tr>
-    `;
-
-    historial.forEach(h => {
-        html += `
-            <tr>
-                <td>${new Date(h.fecha).toLocaleString()}</td>
-                <td>
-                    ${h.antes.laborales.puesto}<br>
-                    $${h.antes.laborales.salario.toLocaleString()}
-                </td>
-                <td>
-                    ${h.despues.laborales.puesto}<br>
-                    $${h.despues.laborales.salario.toLocaleString()}
-                </td>
-            </tr>
-        `;
-    });
-
-    html += "</table>";
-    contenedor.innerHTML = html;
 };
+
+// ======================
+// AUDITORÍA NÓMINA
+// ======================
+const compararCambios = (antes, despues) => {
+    let html = "<ul>";
+
+    for (const key in despues.totales) {
+        const a = antes.totales[key];
+        const d = despues.totales[key];
+
+        if (a !== d) {
+            html += `
+                <li>
+                    <b>${key}</b>:
+                    <span class="antes">$${a.toLocaleString()}</span>
+                    →
+                    <span class="despues">$${d.toLocaleString()}</span>
+                </li>
+            `;
+        }
+    }
+
+    html += "</ul>";
+    return html;
+};
+
+const verAuditoriaNomina = async (empleadoId, periodo) => {
+    try {
+        const res = await fetch(`/api/nomina/${empleadoId}/${periodo}/auditoria`);
+        const data = await res.json();
+
+        if (!data.length) {
+            timelineDiv.innerHTML = "<i>Sin auditoría registrada</i>";
+            return;
+        }
+
+        timelineDiv.innerHTML = data.map(a => `
+            <div class="timeline-item">
+                <b>${new Date(a.fecha).toLocaleString()}</b><br>
+                Acción: ${a.accion}
+                ${compararCambios(a.antes, a.despues)}
+            </div>
+        `).join("");
+
+    } catch (error) {
+        console.error("Error auditoría:", error);
+    }
+};
+
+const verAuditoriaDesdeUI = () => {
+    const empleadoId = Number(empleadoNomina.value);
+    const periodoSel = periodo.value;
+
+    if (!empleadoId || !periodoSel) {
+        alert("Seleccione empleado y período");
+        return;
+    }
+
+    verAuditoriaNomina(empleadoId, periodoSel);
+};
+
+// ======================
+// EXPONER A HTML (CRÍTICO)
+// ======================
+window.editarEmpleado = editarEmpleado;
+window.eliminarEmpleado = eliminarEmpleado;
+window.verHistorial = verHistorial;
+window.verAuditoriaDesdeUI = verAuditoriaDesdeUI;
+
+// ======================
+// INIT
+// ======================
+cargarEmpleados();
