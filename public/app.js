@@ -1,3 +1,9 @@
+import { api } from './modules/api.js';
+import { ui } from './modules/ui.js';
+
+// ======================
+// REFERENCIAS DOM
+// ======================
 const form = document.getElementById("formEmpleado");
 const lista = document.getElementById("listaEmpleados");
 const formNomina = document.getElementById("formNomina");
@@ -5,55 +11,43 @@ const empleadoNomina = document.getElementById("empleadoNomina");
 const resultadoNomina = document.getElementById("resultadoNomina");
 const btnPdfNomina = document.getElementById("btnPdfNomina");
 const historialDiv = document.getElementById("historial");
+const timelineDiv = document.getElementById("timelineAuditoria");
 
-let empleadosCache = [];      // ✅ YA EXISTÍA, ahora se usa correctamente
-let editandoId = null;        // ✅ FALTABA → error editandoId not defined
+// ======================
+// ESTADO GLOBAL
+// ======================
+let empleadosCache = [];
+let editandoId = null;
 
+// ======================
+// HELPERS
+// ======================
 const calcularAnios = fecha => {
-    if (!fecha) return 0;     // ✅ Previene undefined
+    if (!fecha) return 0;
     const inicio = new Date(fecha);
     const hoy = new Date();
     return Math.floor((hoy - inicio) / (1000 * 60 * 60 * 24 * 365));
 };
 
+// ======================
+// CARGAR EMPLEADOS
+// ======================
 const cargarEmpleados = async () => {
-    const res = await fetch("/api/empleados");
-    const empleados = await res.json();
-    console.log("Empleados cargados:", empleados);  // ✅ DEBUG
-    empleadosCache = empleados;   // ✅ CLAVE: cache global para editar
+    try {
+        const empleados = await api.obtenerEmpleados();
 
-    lista.innerHTML = "";
-    empleadoNomina.innerHTML = "";
+        empleadosCache = empleados;
 
-    empleados.forEach(e => {
-        console.log("Procesando empleado:", e);  // ✅ DEBUG
-        if (!e || !e.laborales || !e.personales) return;
+        ui.renderEmpleados(empleados, lista, empleadoNomina);
 
-        const anios = calcularAnios(e.laborales.fechaIngreso);
-        
-
-        empleadoNomina.innerHTML += `
-            <option value="${e.id}">
-                ${e.personales.nombre}
-            </option>
-        `;
-
-       lista.innerHTML += `
-<div class="card shadow mb-3 p-3">
-    <h5>${e.personales.nombre}</h5>
-    <p class="mb-1">Depto: ${e.laborales.departamento}</p>
-    <p class="mb-1">Salario: $${e.laborales.salario.toLocaleString()}</p>
-
-    <div class="d-flex gap-2">
-        <button class="btn btn-warning btn-sm" onclick="editarEmpleado(${e.id})">✏️Enditar</button>
-        <button class="btn btn-danger btn-sm" onclick="eliminarEmpleado(${e.id})">🗑️Eliminar</button>
-        <button class="btn btn-info btn-sm" onclick="verHistorial(${e.id})">📜Historial</button>
-    </div>
-</div>
-`;
-    });
+    } catch (error) {
+        console.error("Error cargando empleados:", error);
+    }
 };
 
+// ======================
+// FORM EMPLEADO
+// ======================
 form.addEventListener("submit", async e => {
     e.preventDefault();
 
@@ -70,23 +64,21 @@ form.addEventListener("submit", async e => {
         }
     };
 
-    const url = editandoId
-        ? `/api/empleados/${editandoId}`
-        : "/api/empleados";
+    try {
+        await api.guardarEmpleado(body, editandoId);
 
-    const method = editandoId ? "PUT" : "POST";
+        editandoId = null;
+        form.reset();
+        cargarEmpleados();
 
-    await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-    });
-
-    editandoId = null;
-    form.reset();
-    cargarEmpleados();
+    } catch (error) {
+        console.error("Error guardando empleado:", error);
+    }
 });
 
+// ======================
+// FORM NÓMINA
+// ======================
 formNomina.addEventListener("submit", async e => {
     e.preventDefault();
 
@@ -102,38 +94,37 @@ formNomina.addEventListener("submit", async e => {
         }
     };
 
-    const res = await fetch("/api/nomina/calcular", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-    });
+    try {
+        const n = await api.calcularNomina(body);
 
-    const n = await res.json();
-    if (n.error) return alert(n.error);
+        if (n.error) return alert(n.error);
 
-    resultadoNomina.innerHTML = `
-        Neto a pagar: <b>$${n.totales.netoPagar.toLocaleString()}</b>
-    `;
+        ui.mostrarResultadoNomina(n, resultadoNomina);
 
-    btnPdfNomina.style.display = "inline";
-    btnPdfNomina.onclick = () =>
-        window.open(`/api/nomina/${body.empleadoId}/${body.periodo}/pdf`);
+        btnPdfNomina.style.display = "inline";
+        btnPdfNomina.onclick = () =>
+            window.open(`/api/nomina/${body.empleadoId}/${body.periodo}/pdf`);
+
+    } catch (error) {
+        console.error("Error calculando nómina:", error);
+    }
 });
+
 // ======================
-// Render Historial de cambios
+// LABELS PARA HISTORIAL
 // ======================
-/***********************************
- * Labels visibles para el usuario
- ***********************************/
 const labels = {
-  salario: "Salario",
-  puesto: "Cargo",
-  departamento: "Departamento",
-  fechaIngreso: "Fecha de ingreso",
-  nombre: "Nombre",
-  fechaNacimiento: "Fecha de nacimiento"
+    salario: "Salario",
+    puesto: "Cargo",
+    departamento: "Departamento",
+    fechaIngreso: "Fecha de ingreso",
+    nombre: "Nombre",
+    fechaNacimiento: "Fecha de nacimiento"
 };
 
+// ======================
+// RENDER CAMBIOS
+// ======================
 const renderCambios = (antes, despues) => {
     let html = "";
 
@@ -154,32 +145,37 @@ const renderCambios = (antes, despues) => {
             }
         }
     }
+
     return html || "<i>Sin cambios relevantes</i>";
 };
 
-
-
 // ======================
-// HISTORIAL DE CAMBIOS
+// HISTORIAL
 // ======================
-
 const verHistorial = async empleadoId => {
-    const res = await fetch(`/api/empleados/${empleadoId}/historial`);
-    const historial = await res.json();
+    try {
+        const historial = await api.obtenerHistorial(empleadoId);
 
-    if (!historial.length) {
-        historialDiv.innerHTML = "<i>Sin cambios registrados</i>";
-        return;
+        if (!historial.length) {
+            historialDiv.innerHTML = "<i>Sin cambios registrados</i>";
+            return;
+        }
+
+        historialDiv.innerHTML = historial.map(h => `
+            <div class="card">
+                <b>Fecha:</b> ${new Date(h.fecha).toLocaleString()}<br><br>
+                ${renderCambios(h.antes, h.despues)}
+            </div>
+        `).join("");
+
+    } catch (error) {
+        console.error("Error cargando historial:", error);
     }
-
-    historialDiv.innerHTML = historial.map(h => `
-    <div class="card">
-        <b>Fecha:</b> ${new Date(h.fecha).toLocaleString()}<br><br>
-        ${renderCambios(h.antes, h.despues)}
-    </div>
-`).join("");
 };
 
+// ======================
+// EDITAR
+// ======================
 const editarEmpleado = id => {
     const e = empleadosCache.find(emp => emp.id === id);
     if (!e) return;
@@ -194,35 +190,23 @@ const editarEmpleado = id => {
     editandoId = id;
 };
 
+// ======================
+// ELIMINAR
+// ======================
 const eliminarEmpleado = async id => {
     if (!confirm("¿Eliminar empleado?")) return;
 
-    await fetch(`/api/empleados/${id}`, { method: "DELETE" });
-    cargarEmpleados();
-};
-
-cargarEmpleados();
-
-const timelineDiv = document.getElementById("timelineAuditoria");
-
-const verAuditoriaNomina = async (empleadoId, periodo) => {
-    const res = await fetch(`/api/nomina/${empleadoId}/${periodo}/auditoria`);
-    const data = await res.json();
-
-    if (!data.length) {
-        timelineDiv.innerHTML = "<i>Sin auditoría registrada</i>";
-        return;
+    try {
+        await api.eliminarEmpleado(id);
+        cargarEmpleados();
+    } catch (error) {
+        console.error("Error eliminando empleado:", error);
     }
-
-    timelineDiv.innerHTML = data.map(a => `
-        <div class="timeline-item">
-            <b>${new Date(a.fecha).toLocaleString()}</b><br>
-            Acción: ${a.accion}
-            ${compararCambios(a.antes, a.despues)}
-        </div>
-    `).join("");
 };
 
+// ======================
+// AUDITORÍA NÓMINA
+// ======================
 const compararCambios = (antes, despues) => {
     let html = "<ul>";
 
@@ -246,6 +230,29 @@ const compararCambios = (antes, despues) => {
     return html;
 };
 
+const verAuditoriaNomina = async (empleadoId, periodo) => {
+    try {
+        const res = await fetch(`/api/nomina/${empleadoId}/${periodo}/auditoria`);
+        const data = await res.json();
+
+        if (!data.length) {
+            timelineDiv.innerHTML = "<i>Sin auditoría registrada</i>";
+            return;
+        }
+
+        timelineDiv.innerHTML = data.map(a => `
+            <div class="timeline-item">
+                <b>${new Date(a.fecha).toLocaleString()}</b><br>
+                Acción: ${a.accion}
+                ${compararCambios(a.antes, a.despues)}
+            </div>
+        `).join("");
+
+    } catch (error) {
+        console.error("Error auditoría:", error);
+    }
+};
+
 const verAuditoriaDesdeUI = () => {
     const empleadoId = Number(empleadoNomina.value);
     const periodoSel = periodo.value;
@@ -257,3 +264,16 @@ const verAuditoriaDesdeUI = () => {
 
     verAuditoriaNomina(empleadoId, periodoSel);
 };
+
+// ======================
+// EXPONER A HTML (CRÍTICO)
+// ======================
+window.editarEmpleado = editarEmpleado;
+window.eliminarEmpleado = eliminarEmpleado;
+window.verHistorial = verHistorial;
+window.verAuditoriaDesdeUI = verAuditoriaDesdeUI;
+
+// ======================
+// INIT
+// ======================
+cargarEmpleados();

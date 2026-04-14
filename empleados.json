@@ -40,5 +40,18 @@
       "salario": 4500000,
       "fechaIngreso": "2024-01-01"
     }
+  },
+  {
+    "id": 1776133218172,
+    "personales": {
+      "nombre": "BERNDARDO DEL VIENTO",
+      "fechaNacimiento": "1985-05-01"
+    },
+    "laborales": {
+      "puesto": "TECNICO",
+      "departamento": "Administrativo",
+      "salario": 1800000,
+      "fechaIngreso": "2009-08-05"
+    }
   }
 ]

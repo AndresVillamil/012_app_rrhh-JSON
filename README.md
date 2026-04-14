@@ -17,36 +17,39 @@ Compatible con Vers_01
 
 ![alt text](image.png)
 
+
+---
 # 🧑‍💼 Sistema de Gestión de RRHH
 
-Aplicación web para la gestión de empleados, cálculo de nómina, historial de cambios y auditoría.
+Aplicación web para la gestión de empleados, cálculo de nómina, historial de cambios y auditoría, utilizando una arquitectura modular en frontend y persistencia basada en archivos JSON en backend.
+![alt text](image-3.png)
 
-![alt text](image-1.png)
-
-![alt text](image-2.png)
+![alt text](image-4.png)
 
 ---
 
 ## 🚀 Tecnologías utilizadas
 
 * Node.js + Express
-* JavaScript (Frontend)
+* JavaScript (ES Modules)
 * Bootstrap 5
 * JSON como base de datos
 * PDFKit (generación de reportes)
 
 ---
 
-## 🏗️ Arquitectura
+## 🏗️ Arquitectura del proyecto
 
 El sistema sigue una arquitectura cliente-servidor:
 
-Frontend (public/)
+### 🔹 Frontend (public/)
 
-* Render dinámico con JavaScript
-* Comunicación vía fetch API
+* `index.html` → Interfaz de usuario (Bootstrap)
+* `app.js` → Controlador principal (orquestador)
+* `modules/api.js` → Manejo de llamadas HTTP (fetch)
+* `modules/ui.js` → Renderizado de la interfaz
 
-Backend (server.js)
+### 🔹 Backend (server.js)
 
 * API REST
 * Lógica de negocio
@@ -54,14 +57,36 @@ Backend (server.js)
 
 ---
 
+## 📁 Estructura del proyecto
+
+```
+public/
+│
+├── index.html
+├── styles.css
+├── app.js
+│
+└── modules/
+    ├── api.js
+    └── ui.js
+
+server.js
+empleados.json
+historial.json
+nomina.json
+auditoria_nomina.json
+```
+
+---
+
 ## 💾 Persistencia de datos
 
-Los datos se almacenan en archivos JSON simulando una base de datos:
+Se utiliza almacenamiento en archivos JSON, simulando una base de datos:
 
-* empleados.json → Información principal
-* historial.json → Cambios en empleados
-* nomina.json → Cálculos de nómina
-* auditoria_nomina.json → Auditoría de recalculos
+* `empleados.json` → Información principal de empleados
+* `historial.json` → Cambios realizados sobre empleados
+* `nomina.json` → Cálculos de nómina
+* `auditoria_nomina.json` → Auditoría de recalculos
 
 ---
 
@@ -71,18 +96,15 @@ Los datos se almacenan en archivos JSON simulando una base de datos:
 
 * Crear empleado
 * Editar información
-* Eliminar
-* Visualizar listado
+* Eliminar empleado
+* Listar empleados
 
 ---
 
 ### 📜 Historial de cambios
 
-Cada modificación guarda:
-
-* Estado anterior
-* Estado nuevo
-* Fecha del cambio
+* Registro automático de modificaciones
+* Comparación "antes vs después"
 
 ---
 
@@ -105,58 +127,58 @@ Neto = Devengado - Deducciones
 
 ### 🧾 Generación de PDF
 
-Se genera un desprendible con:
-
-* Datos del empleado
-* Conceptos de nómina
-* Total a pagar
+* Desprendible de nómina
+* Información detallada del empleado
 
 ---
 
 ### 🕒 Auditoría de nómina
 
-Cada recalculo guarda:
-
-* Antes vs Después
-* Fecha
-* Acción realizada
+* Registro de recalculos
+* Comparación de cambios
+* Historial por período
 
 ---
 
 ## 🔄 Flujo de la aplicación
 
-1. Usuario crea empleado
-2. Se guarda en JSON
-3. Se puede editar → genera historial
+1. Usuario crea o edita empleado
+2. Se guarda en JSON mediante API
+3. Se registra historial de cambios
 4. Se calcula nómina
 5. Se guarda resultado
 6. Se auditan cambios
 
 ---
 
-## 📦 Instalación
+## 🧠 Conceptos clave implementados
 
-```bash
-npm install
-node server.js
-```
+### 🔹 Arquitectura modular (Frontend)
 
-Abrir en:
+Separación de responsabilidades:
 
-```
-http://localhost:3000
+* `api.js` → Comunicación con backend
+* `ui.js` → Render HTML
+* `app.js` → Control de flujo
+
+Ejemplo:
+
+```js
+import { api } from './modules/api.js';
+import { ui } from './modules/ui.js';
+
+const empleados = await api.obtenerEmpleados();
+ui.renderEmpleados(empleados, contenedor);
 ```
 
 ---
 
-## 🧠 Conceptos clave del proyecto
-
 ### 🔹 Render dinámico
 
-Se crean elementos HTML desde JavaScript:
+Se generan elementos HTML desde JavaScript:
 
 ```js
-lista.innerHTML += `<div>${empleado.nombre}</div>`;
+contenedor.innerHTML += `<div>${empleado.nombre}</div>`;
 ```
 
 ---
@@ -171,31 +193,72 @@ fetch("/api/empleados")
 
 ---
 
-### 🔹 Persistencia simple
+### 🔹 Persistencia simple (backend)
 
 ```js
-fs.writeFileSync("empleados.json", JSON.stringify(data));
+fs.writeFileSync("empleados.json", JSON.stringify(data, null, 2));
+```
+
+---
+
+## ⚠️ Requisitos importantes
+
+### 🔹 Uso de módulos ES
+
+En `index.html`:
+
+```html
+<script type="module" src="./app.js"></script>
+```
+
+---
+
+### 🔹 Servidor Express
+
+Debe servir la carpeta `public`:
+
+```js
+app.use(express.static('public'));
+```
+
+---
+
+## 📦 Instalación
+
+```bash
+npm install
+node server.js
+```
+
+Abrir en navegador:
+
+```
+http://localhost:3000
 ```
 
 ---
 
 ## 🚧 Mejoras futuras
 
-* Migrar a base de datos real (MySQL o MongoDB)
+* Migración a base de datos real (MySQL / MongoDB)
 * Autenticación de usuarios
 * Roles (Admin / RRHH)
-* UI más avanzada (React o Vue)
-* Cache y optimización
+* Eliminación de `onclick` (event delegation)
+* UI avanzada (React / Vue)
+* Validaciones frontend más robustas
 
 ---
 
 ## 🏁 Conclusión
 
-Este proyecto implementa un sistema completo de RRHH con:
+Este proyecto implementa un sistema completo de gestión de RRHH con:
 
-✔ CRUD
-✔ Auditoría
+✔ CRUD de empleados
+✔ Auditoría de cambios
 ✔ Cálculo de nómina
 ✔ Generación de PDF
+✔ Arquitectura modular
 
-Sirve como base para sistemas empresariales reales.
+Sirve como base para evolucionar hacia aplicaciones empresariales reales.
+
+---
