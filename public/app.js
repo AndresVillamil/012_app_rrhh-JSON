@@ -38,18 +38,19 @@ const cargarEmpleados = async () => {
             </option>
         `;
 
-        lista.innerHTML += `
-            <div class="card">
-                <b>${e.personales.nombre}</b><br>
-                Departamento: ${e.laborales.departamento}<br>
-                Salario: $${e.laborales.salario.toLocaleString()}<br>
-                Años de servicio: ${anios}<br><br>
+       lista.innerHTML += `
+<div class="card shadow mb-3 p-3">
+    <h5>${e.personales.nombre}</h5>
+    <p class="mb-1">Depto: ${e.laborales.departamento}</p>
+    <p class="mb-1">Salario: $${e.laborales.salario.toLocaleString()}</p>
 
-                <button onclick="editarEmpleado(${e.id})">✏️ Editar</button>
-                <button onclick="eliminarEmpleado(${e.id})">🗑️ Eliminar</button>
-                <button onclick="verHistorial(${e.id})">📜 Historial</button>
-            </div>
-        `;
+    <div class="d-flex gap-2">
+        <button class="btn btn-warning btn-sm" onclick="editarEmpleado(${e.id})">✏️Enditar</button>
+        <button class="btn btn-danger btn-sm" onclick="eliminarEmpleado(${e.id})">🗑️Eliminar</button>
+        <button class="btn btn-info btn-sm" onclick="verHistorial(${e.id})">📜Historial</button>
+    </div>
+</div>
+`;
     });
 };
 

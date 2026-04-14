@@ -106,5 +106,59 @@
       "cerrado": false,
       "fechaGeneracion": "2026-02-08T22:29:17.461Z"
     }
+  },
+  {
+    "empleadoId": 1770222091944,
+    "periodo": "2026-04",
+    "fecha": "2026-04-14T02:03:29.878Z",
+    "accion": "RECALCULO",
+    "antes": {
+      "empleadoId": 1770222091944,
+      "periodo": "2026-04",
+      "salarioBase": 3550000,
+      "novedades": {
+        "horasExtras": 2,
+        "bonos": 1200,
+        "deducciones": {
+          "fondoEmpleados": 200
+        }
+      },
+      "aportes": {
+        "salud": 143527,
+        "pension": 143527,
+        "arl": 18730
+      },
+      "totales": {
+        "devengado": 3588179,
+        "deducciones": 305984,
+        "netoPagar": 3282195
+      },
+      "cerrado": false,
+      "fechaGeneracion": "2026-04-14T02:01:20.785Z"
+    },
+    "despues": {
+      "empleadoId": 1770222091944,
+      "periodo": "2026-04",
+      "salarioBase": 3550000,
+      "novedades": {
+        "horasExtras": 2,
+        "bonos": 1200000,
+        "deducciones": {
+          "fondoEmpleados": 200000
+        }
+      },
+      "aportes": {
+        "salud": 191479,
+        "pension": 191479,
+        "arl": 24988
+      },
+      "totales": {
+        "devengado": 4786979,
+        "deducciones": 607946,
+        "netoPagar": 4179033
+      },
+      "cerrado": false,
+      "fechaGeneracion": "2026-04-14T02:03:29.878Z"
+    }
   }
 ]

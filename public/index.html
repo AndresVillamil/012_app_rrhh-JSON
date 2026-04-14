@@ -3,21 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <title>RRHH - Gestión</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-<h1>Gestión de Empleados</h1>
 
-<form id="formEmpleado">
-    <input id="nombre" placeholder="Nombre" required>
-    <input type="date" id="fechaNacimiento" required>
-    <input id="puesto" placeholder="Puesto" required>
-    <input id="departamento" placeholder="Departamento" required>
-    <input type="number" id="salario" placeholder="Salario" required>
-    <input type="date" id="fechaIngreso" required>
-    <button>Guardar</button>
-</form>
+<div class="container mt-4">
+  <h1 class="text-center">Gestión de Empleados</h1>
+
+  <form id="formEmpleado" class="card p-4 shadow">
+    <input id="nombre" class="form-control mb-2" placeholder="Nombre" required>
+    <input type="date" id="fechaNacimiento" class="form-control mb-2" required>
+
+    <input id="puesto" class="form-control mb-2" placeholder="Puesto" required>
+    <input id="departamento" class="form-control mb-2" placeholder="Departamento" required>
+
+    <input type="number" id="salario" class="form-control mb-2" placeholder="Salario" required>
+    <input type="date" id="fechaIngreso" class="form-control mb-3" required>
+
+    <button class="btn btn-primary">Guardar</button>
+  </form>
+</div>
 
 <h2>Empleados</h2>
 <div id="listaEmpleados"></div>
